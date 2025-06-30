@@ -1,0 +1,11 @@
+Create Venv:
+
+python -m venv .ragvenv
+PS C:\DevPractice\python\RAG\summarizeMyUni\MASChatbot> .\.ragvenv\Scripts\activate
+
+====================================
+Remove metadata out of initial commit:
+
+git rm -fr --cached .idea
+Add to gitignore:
+.idea/
