@@ -1,2 +1,2 @@
 I use python 3.8.2, pip, intelliJ, my venv is called .ragvenv.
-So far, I have pip installed: nothing.
+So far, I installed via pip: langchain, langchain-community, unstructured, pip install "unstructured[pdf]", pymupdf
