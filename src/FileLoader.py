@@ -1,5 +1,5 @@
 
-path = r'C:\Data Science\MAS Data Science\2019FS Datenanalyse\Wahltag Kausalanalyse' #\kausalanalyse.pdf
+
 
 import os
 
@@ -34,9 +34,13 @@ def load_pdfs_from_folder(path: str): #This will make one document per page
     #Metadata they have after this: source (file path), file_path (same thing), page, total_pages, format: PDF, title, author, filename, and a bunch of other useless stuff
     return all_docs
 
+if __name__ == "__main__":
+    print("starting FileLoader")
+    path = r'C:\Data Science\MAS Data Science\2019FS Datenanalyse\Wahltag Kausalanalyse' #\kausalanalyse.pdf
+    docs = load_pdfs_from_folder(path)
 
-docs = load_pdfs_from_folder(path)
+    for doc in docs:
+        print(f"====================={doc.metadata['filename']} Page {doc.metadata['page']}=============================")
+        print(doc)
 
-for doc in docs:
-    print(f"====================={doc.metadata['filename']} Page {doc.metadata['page']}=============================")
-    print(doc)
+    print("End of FileLoader")
