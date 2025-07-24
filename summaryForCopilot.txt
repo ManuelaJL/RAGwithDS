@@ -6,6 +6,8 @@ I've successfully created:
 I use python 3.8.2, pip, intelliJ, my venv is called .ragvenv.
 So far, I installed via pip: langchain, langchain-community, unstructured, pip install "unstructured[pdf]", pymupdf, sentence-transformers, faiss-cpu
 A lot of the documents I want to use as input are in German, though I might use English ones too.
-I'm using ollama (which I have recently downloaded, so I assume it's upto date), and tinyllama
+I'm using ollama (which I have recently downloaded, July 2025, so I assume it's upto date), and tinyllama
 I tried it with TinyLlama. But it kept hallucinating answers, not finding the right page. Even if I specifically ask a question that is answered verbatim on one of the pages.
-
+Gemma:latest has the problem that I get Error: llama runner process has terminated: cudaMalloc failed: out of memory
+So I used Gemma:2b instead, which is smaller. The program runs with this. It follows the instructions ("Repeat the question") better than tinyllama.
+It's choosing the correct page result.

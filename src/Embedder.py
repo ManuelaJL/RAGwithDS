@@ -7,7 +7,8 @@ path = r'C:\Data Science\MAS Data Science\2019FS Datenanalyse\Wahltag Kausalanal
 docs = load_pdfs_from_folder(path)
 
 # Choose a small-but-powerful embedding model
-embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2") #pip install sentence-transformers
+# sentence-transformers/all-MiniLM-L6-v2") #This had trouble with german documents
+embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2") #pip install sentence-transformers
 
 # Build a FAISS vector store from the documents (Facebook AI Similarity Search)
 vectorstore = FAISS.from_documents(docs, embedding_model)

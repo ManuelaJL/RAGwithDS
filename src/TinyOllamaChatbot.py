@@ -126,3 +126,6 @@ for i, (doc, score) in enumerate(docs):
 #=======================================================================================================
 
 # Conclusion: TinyLlama doesn't seem suited for RAG.
+
+
+# --> The problem was I used a different embedder than when I made the index!
