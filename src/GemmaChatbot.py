@@ -19,6 +19,11 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 from typing import cast
 
+# Next steps:
+# 1. make a loop so you can keep asking questions
+# 2. It's mainly quoting the first page even though it lists 4 pages as its sources. Can I make it only list the pages it actually used?
+# 3. Make it accompany the answer with a verbatim quote of the most relevant chunk.
+
 # Part of the chain that was done in Embedder.py
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
 indexName = "my_index_of_Wahltag Kausalanalyse"
@@ -74,24 +79,23 @@ qa_chain = cast(Chain, RetrievalQA.from_chain_type(
 ))
 
 
-# print(f"retriever.search_type: {retriever.search_type}")
-# print(f"retriever.search_kwargs: {retriever.search_kwargs}" )
+while True:
+    user_query = input("Ask a question, or type exit:\n")
+    if(user_query.lower in ["exit", "quit"]):
+        print("Bye!")
+        break
+    result = qa_chain.invoke({"query": user_query})
+    print("🔍 Answer:")
+    print(result["result"])
 
-query = "Was sind die Ziele der Regressionsanalyse?"
+    print("\n📚 Source pages:")
+    for doc in result["source_documents"]:
+        print(f"{doc.metadata['filename']} — page {doc.metadata['page']}")
+    print("\n\n")
+
+
 #Beispielfrage: wovon ist die Welt durchdrungen? Answer P.61: Die Welt ist durchdrungen von Heterogenität
 #Beispielfrage: Ziele der Regressionsanalyse? Antwort: P.5 has exactly that title
-
-result_from_sequence = qa_chain.invoke({"query": query}) #Comment this out when using the below troubleshooting
-
-
-print("🔍 Answer:")
-print(result_from_sequence["result"])
-
-print("\n📚 Source pages:")
-for doc in result_from_sequence["source_documents"]:
-    print(f"{doc.metadata['filename']} — page {doc.metadata['page']}")
-
-
 
 #============ Troubleshooting: forcing the right page into the context, ignoring the rest ===============
 
