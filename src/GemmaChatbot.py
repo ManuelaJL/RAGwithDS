@@ -20,7 +20,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from typing import cast
 
 # Next steps:
-# 1. make a loop so you can keep asking questions
 # 2. It's mainly quoting the first page even though it lists 4 pages as its sources. Can I make it only list the pages it actually used?
 # 3. Make it accompany the answer with a verbatim quote of the most relevant chunk.
 
@@ -48,8 +47,8 @@ from langchain.prompts import PromptTemplate
 
 template = """
 You must begin by repeating the exact question word for word.
-Then answer the question, using only the context below to answer the question. Do not add anything unrelated.
-Avoid vague or general statements — provide a technically accurate response.
+Then answer the question, using the context below. Do not add anything unrelated.
+Avoid vague or general statements — draw from concrete details in the context. If the context does not contain an answer, say so clearly.
 
 Question:
 {question}
