@@ -19,9 +19,19 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 from typing import cast
 
+def find_search_term(keyword: str, vectorstore, k=50):
+    hits = vectorstore.similarity_search(keyword, k=k)
+    return [
+        f"{hits[0].metadata.get('source')} P.{doc.metadata.get('page_number')}"
+        for doc in hits
+        if keyword.lower() in doc.page_content.lower()
+    ]
+
+
 # Next steps:
 # 2. It's mainly quoting the first page even though it lists 4 pages as its sources. Can I make it only list the pages it actually used?
 # 3. Make it accompany the answer with a verbatim quote of the most relevant chunk.
+# 4. Include more documents
 
 # Part of the chain that was done in Embedder.py
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
@@ -66,7 +76,7 @@ llm = Ollama(model="gemma:2b") #LangChain LLM wrapper
 
 retriever = vectorstore.as_retriever()      #gets the context
 # retriever.search_kwargs["k"] = 1
-# retriever.search_type = "mmr"
+retriever.search_type = "similarity" #mmr
 
 
 
@@ -79,18 +89,25 @@ qa_chain = cast(Chain, RetrievalQA.from_chain_type(
 
 
 while True:
-    user_query = input("Ask a question, or type exit:\n")
+    user_query = input("Ask a question, or type exit (or Search: term to search):\n")
     if(user_query.lower in ["exit", "quit"]):
         print("Bye!")
         break
-    result = qa_chain.invoke({"query": user_query})
-    print("🔍 Answer:")
-    print(result["result"])
+    if(user_query.lower().startswith("search:")):
+        search_term = user_query[len("search:"):].strip()
+        print("Searching for: [" + search_term + "]")
+        pages = find_search_term(search_term, vectorstore)  #Will only find k results, depending on how much you set in the function
+        print(f"Pages mentioning '{search_term}':\n",
+              "\n".join(str(p) for p in pages))
+    else:
+        result = qa_chain.invoke({"query": user_query})
+        print("🔍 Answer:")
+        print(result["result"])
 
-    print("\n📚 Source pages:")
-    for doc in result["source_documents"]:
-        print(f"{doc.metadata['filename']} — page {doc.metadata['page']}")
-    print("\n\n")
+        print("\n📚 Source pages:")
+        for doc in result["source_documents"]:
+            print(f"{doc.metadata['filename']} — page {doc.metadata['page']}")
+        print("\n\n")
 
 
 #Beispielfrage: wovon ist die Welt durchdrungen? Answer P.61: Die Welt ist durchdrungen von Heterogenität
