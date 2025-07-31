@@ -110,6 +110,7 @@ while True:
         print("\n📚 Source pages:")
         for doc in result["source_documents"]:
             print(f"{doc.metadata['filename']} — page {doc.metadata['page']}")
+            print("\n\t" + doc.page_content.replace("\n", "\n\t") + "\n")
         print("\n\n")
 
 
