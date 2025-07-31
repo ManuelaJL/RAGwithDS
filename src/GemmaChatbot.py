@@ -32,8 +32,6 @@ def find_search_term(keyword: str, vectorstore, k=50):
 
 
 # Next steps:
-# 2. It's mainly quoting the first page even though it lists 4 pages as its sources. Can I make it only list the pages it actually used?
-# 3. Make it accompany the answer with a verbatim quote of the most relevant chunk.
 # 4. Include more documents
 
 # Part of the chain that was done in Embedder.py
@@ -109,7 +107,8 @@ while True:
 
         print("\n📚 Source pages:")
         for doc in result["source_documents"]:
-            print(f"{doc.metadata['filename']} — page {doc.metadata['page']}")
+            clean_path = doc.metadata['file_path'].replace('\\\\', '\\')
+            print(f"Page {doc.metadata['page']} of {clean_path}")
             print("\n\t" + doc.page_content.replace("\n", "\n\t") + "\n")
         print("\n\n")
 
