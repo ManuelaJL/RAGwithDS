@@ -21,11 +21,14 @@ from typing import cast
 
 def find_search_term(keyword: str, vectorstore, k=50):
     hits = vectorstore.similarity_search(keyword, k=k)
-    return [
-        f"{hits[0].metadata.get('source')} P.{doc.metadata.get('page_number')}"
+    pages = [ # = Set comprehension. Creates a set, which doesn't allow duplicates
+        (doc.metadata.get('source'), doc.metadata.get('page_number'))
+        # f"{hits[0].metadata.get('source')} P.{doc.metadata.get('page_number')}"
         for doc in hits
         if keyword.lower() in doc.page_content.lower()
     ]
+    sorted_entries = sorted(pages, key=lambda x: (x[0], x[1]))
+    return [f"{source} P.{page}" for source, page in sorted_entries]
 
 
 # Next steps:
