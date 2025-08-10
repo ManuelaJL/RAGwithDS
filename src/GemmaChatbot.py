@@ -9,11 +9,10 @@
 # I got: Error: llama runner process has terminated: cudaMalloc failed: out of memory
 # So, created C:\Users\manue\.ollama\config to force it to use cpu. But still same error.
 # Tried instead: Ollama pull gemma:2b, and that worked
-from langchain.chains.base import Chain
+
 from langchain_community.llms import Ollama
 
 
-from langchain.chains import RetrievalQA
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
@@ -31,18 +30,46 @@ def find_search_term(keyword: str, vectorstore, k=50):
     return [f"{source} P.{page}" for source, page in sorted_entries]
 
 
+
+from src.VectorCacheCreator import create_chunk_id
+
+def meets_relevance_criteria(doc, query, vector_cache, min_relevance=0.75):
+    query_embedding = embedding_model.embed_query(query)
+    cache_chunk_ID = create_chunk_id(doc)
+    doc_embedding_entry = vector_cache.get(cache_chunk_ID)
+    if not doc_embedding_entry:
+        print(f"Warning: could not verify relevance of document {doc.metadata['file_path']}_{doc.metadata.get('page')} (hash {cache_chunk_ID})")
+        doc.metadata['score'] = 0
+        return True
+    doc_embedding = doc_embedding_entry['embedding']
+    chunk_score = compute_score(doc_embedding, query_embedding)
+    if debug:
+        print(f"Score of {doc.metadata['file_path']}_{doc.metadata.get('page')} : {chunk_score}")
+    doc.metadata['score'] = chunk_score
+    return chunk_score >= min_relevance
+
+
+from sklearn.metrics.pairwise import cosine_similarity
+
+def compute_score(doc_embedding, query_embedding):
+    return float(cosine_similarity([query_embedding], [doc_embedding])[0][0])
+
+
+def removeNonPrintableCharacters(text): #Not used at the moment
+    return ''.join(c for c in text if c.isprintable() or c in '\n\r')
+
+
+debug = True
 # Next steps:
 # 4. Include more documents
 
 # Part of the chain that was done in Embedder.py
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
 indexName = "my_index_of_Wahltag Kausalanalyse"
-
-# Load your saved FAISS index
-# embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2") #This had trouble with german documents
+embedModelString = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # "sentence-transformers/all-MiniLM-L6-v2" had trouble with german documents
 
 embedding_model = HuggingFaceEmbeddings( #Pitfall! Use same model here!
-    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    model_name=embedModelString
 )
 
 
@@ -81,17 +108,36 @@ retriever.search_type = "similarity" #mmr
 
 
 
-qa_chain = cast(Chain, RetrievalQA.from_chain_type(
-    llm=llm,
-    retriever=retriever,
-    return_source_documents=True,
-    chain_type_kwargs={"prompt": prompt}
-))
+# qa_chain = cast(Chain, RetrievalQA.from_chain_type( #We no longer use this because we want to add a step inbetween retrieving and generating the answer
+#     llm=llm,
+#     retriever=retriever,
+#     return_source_documents=True,
+#     chain_type_kwargs={"prompt": prompt}
+# ))
 
+qa_chain_without_retriever = prompt | llm
+
+# This is for checking if the found documents are relevant
+import json
+import os
+vector_cache_name = indexName + "/vector_cache_for_relevance_using_" + embedModelString.replace("/", "_") + ".jsonl"
+vector_cache = {}
+if os.path.exists(vector_cache_name):
+    with open(vector_cache_name, "r") as f:
+        for line in f:
+            entry = json.loads(line)
+            vector_cache[entry["chunk_id"]] = entry
+else:
+    print("Warning: there is currently no vector cache, so I can't filter out less relevant documents. You may create one using VectorCacheCreator.py")
+    print(f"The path I checked: {vector_cache_name}")
+
+
+
+# Start the chat
 
 while True:
     user_query = input("Ask a question, or type exit (or Search: term to search):\n")
-    if(user_query.lower in ["exit", "quit"]):
+    if(user_query.lower() in ["exit", "quit"]):
         print("Bye!")
         break
     if(user_query.lower().startswith("search:")):
@@ -101,69 +147,47 @@ while True:
         print(f"Pages mentioning '{search_term}':\n",
               "\n".join(str(p) for p in pages))
     else:
-        result = qa_chain.invoke({"query": user_query})
-        print("🔍 Answer:")
-        print(result["result"])
 
-        print("\n📚 Source pages:")
-        for doc in result["source_documents"]:
-            clean_path = doc.metadata['file_path'].replace('\\\\', '\\')
-            print(f"Page {doc.metadata['page']} of {clean_path}")
-            print("\n\t" + doc.page_content.replace("\n", "\n\t") + "\n")
+        retrieved_docs = retriever.get_relevant_documents(user_query)
+
+        if not retrieved_docs or all(len(doc.page_content.strip()) < 20 for doc in retrieved_docs):
+            print("❌ No relevant pages found.")
+            continue
+
+        if vector_cache:    #Filtering out documents that aren't relevant enough
+            filtered_docs = [doc for doc in retrieved_docs if meets_relevance_criteria(doc, user_query, vector_cache, 0.6)]
+        else:
+            filtered_docs = retrieved_docs
+
+        if not filtered_docs:
+            print("None of the retrieved pages were relevant enough to answer your query")
+            continue
+
+        filtered_docs.sort(key=lambda x: x.metadata['score'], reverse=True)
+
+        context_text = "\n\n".join(doc.page_content for doc in filtered_docs)
+
+        if not context_text.strip():
+            print("⚠️ No usable context found. Skipping model invocation.")
+            continue
+
+        result = None
+        try:
+            result = qa_chain_without_retriever.invoke({
+                "question": user_query,
+                "context":  context_text
+            })
+        except Exception as e:
+            print(f"Got an exception: {e}")
+        if not result:
+            print("Got no result")
+        else:
+            print("🔍 Answer:")
+            print(result)
+
+            print("\n📚 Source pages:")
+            for doc in filtered_docs:
+                clean_path = doc.metadata['file_path'].replace('\\\\', '\\')
+                print(f"Page {doc.metadata['page']} of {clean_path}")
+                print("\n\t" + doc.page_content.replace("\n", "\n\t") + "\n")
         print("\n\n")
-
-
-#Beispielfrage: wovon ist die Welt durchdrungen? Answer P.61: Die Welt ist durchdrungen von Heterogenität
-#Beispielfrage: Ziele der Regressionsanalyse? Antwort: P.5 has exactly that title
-
-#============ Troubleshooting: forcing the right page into the context, ignoring the rest ===============
-
-# target_doc = [
-#     doc for doc in vectorstore.similarity_search("Ziele der Regressionsanalyse", k=300)
-#     if doc.metadata.get("page_number") == 5
-# ][0]
-#
-#
-# qa_chain_without_retriever = prompt | llm
-#
-# result = qa_chain_without_retriever.invoke({
-#     "question": "Was sind die Ziele der Regressionsanalyse?",
-#     "context": target_doc.page_content
-# })
-# print("=======================Test run=====================")
-# print("🔍 Answer:")
-# print(result)
-# print("=======================End of test run=====================")
-
-# # Result:
-# # Reminder: content of page is
-# # Ziele der Regressionsanalyse
-# # Regression als ein Mittel zur Deskription
-# # I Beschreibung der konditionalen Verteilung einer Variablen.
-# # I Wie unterscheidet sich die Verteilung von Y für verschiedene Werte
-# # von X?
-# # Regression als ein Mittel zur Erklärung
-# # I Test von (kausalen) Hypothesen über Zusammenhänge zwischen
-# # Variablen
-# # I Wie ist der Eekt von X auf Y ?
-# # Gerichtete Beziehungen
-# # I Anders als in der Korrelationsanalyse sind in der Regressionsanalyse
-# # die Beziehungen zwischen den Variablen gerichtet
-# # F Es gibt eine abhängige Variable (erklärte Variable, Ergebnisvariable,
-# #                                             Response, Regressand, . . . )
-# # F und es gibt unabhängige Variablen (erklärende Variable, Kovariate,
-# #                                                 Stimulus, Regressor, . . . ).
-# #
-# # Prompt: You must begin by repeating the exact question word for word.
-# #     Then answer the question, using only the context below to answer the question. Do not add anything unrelated.
-# #
-# #
-# # And what I got as a result:
-# # 🔍 Answer:
-# # **Was sind die Ziele der Regressionsanalyse?**
-# #
-# # Ziele der Regressionsanalyse sind die Bestimmung der Muster und Regeln, die die Verteilung der Variablen beeinflussen.
-# #
-# # The answer isn't always the same! There's randomness to it! (temperature)
-
-#========================================================================================================

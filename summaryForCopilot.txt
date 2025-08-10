@@ -1,13 +1,50 @@
-I want to create a RAG that runs on my local computer.
+I want to create a RAG that runs on my local computer. As input, it will use the contents of my Data Science MAS folder.
 I've successfully created:
 - a python file that loads all the pdfs in a given folder (FileLoader.py)
 - a python file that creates a FAISS index out of them (Embedder.py) which stores the resulting folder on my HD. This folder contanis an index.faiss and an index.pkl
 - Now I'm trying to get an Ollama chatbot to access this index. But mistral kept showing exit code -1073740791, so we switched to tinyllama (with set OLLAMA_NUM_GPU_LAYERS=0) and tinyllama usually answers one question and then crashes again, with the message ValueError: Ollama call failed with status code 500. Details: {"error":"llama runner process has terminated: GGML_ASSERT(ctx-\u003emem_buffer != NULL) failed"}
 I use python 3.8.2, pip, intelliJ, my venv is called .ragvenv.
-So far, I installed via pip: langchain, langchain-community, unstructured, pip install "unstructured[pdf]", pymupdf, sentence-transformers, faiss-cpu
+So far, I installed via pip: langchain, langchain-community, unstructured, pip install "unstructured[pdf]", pymupdf, sentence-transformers, faiss-cpu,
 A lot of the documents I want to use as input are in German, though I might use English ones too.
 I'm using ollama (which I have recently downloaded, July 2025, so I assume it's upto date), and tinyllama
 I tried it with TinyLlama. But it kept hallucinating answers, not finding the right page. Even if I specifically ask a question that is answered verbatim on one of the pages.
 Gemma:latest has the problem that I get Error: llama runner process has terminated: cudaMalloc failed: out of memory
 So I used Gemma:2b instead, which is smaller. The program runs with this. It follows the instructions ("Repeat the question") better than tinyllama.
-It's choosing the correct page result.
+It's choosing the correct page result and giving an ok answer.
+
+When the user asks a question, the most relevant documents are loaded. Then I run them to a filter to make sure they actually are relevant (meets_relevance_criteria)
+In this filter, I compare the vector representation of the document with that of the query to make sure they are close enough.
+I don't have access to the vector representation of the document directly, because it is under the hood. So instead, I create my own cache, with VectorCacheCreator.
+
+Project layout:
+MASChatbot
+├── .ragvenv/                               # Virtual environment
+MASChatbot/src
+├── FileLoader.py                           # Loads PDFs from folder
+├── Embedder.py                             # Embeds documents and creates FAISS index
+├── VectorCacheCreator.py                   # Creates JSONL cache of embeddings
+├── GemmaChatbot.py                         # Main chatbot loop
+MASChatbot/my_index_of_Wahltag Kausalanalyse
+├── index.faiss                             # FAISS index. Currently only of 1 PDF. Will add more later
+├── index.pkl                               # LangChain docstore
+├── vector_cache_for_relevance_....jsonl    # Custom embedding cache
+
+Cycle:
+1. Embedder uses FileLoader to get the contents of the PDF (currenlty only 1. Will add more later)
+It creates an index, i.e. a FAISS vectorstore, which is stored in the file index.faiss
+2. VectorCacheCreator creates a cache of each chunk's embedding, saved in vector_cache_for_relevance...jsonl
+This is because the chunks' embedding isn't accessible to us. It's blackbox. But we would like to have the
+embedding so we can compare how relevant the found results are.
+ChunkIds are deterministic, using the filename and page number.
+3. (Failed at this step with TinyOllamaChatbot, so instead using: ) GemmaChatbot loads the index/vectorstore
+and the vector cache, then chats with the user in an endless loop.
+Instead of using qa_chain to get the results directly, we first get the relevant documents via the retriever,
+then check via meets_relevance_criteria if each page is close enough to the query (that's where we need the vector_cache).
+It merges the relevant pages into a context string, and uses it to call qa_chain_without_retriever.invoke and prints the result.
+
+
+Todo:
+    - if index is created anew, delete vector storage that goes with it.
+
+
+TODO: centralize settings like the embed model and infos like that
