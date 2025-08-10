@@ -16,7 +16,7 @@ When the user asks a question, the most relevant documents are loaded. Then I ru
 In this filter, I compare the vector representation of the document with that of the query to make sure they are close enough.
 I don't have access to the vector representation of the document directly, because it is under the hood. So instead, I create my own cache, with VectorCacheCreator.
 
-Project layout:
+Project layout: (placeholders from config.py)
 MASChatbot
 ├── .ragvenv/                               # Virtual environment
 MASChatbot/src
@@ -24,7 +24,7 @@ MASChatbot/src
 ├── Embedder.py                             # Embeds documents and creates FAISS index
 ├── VectorCacheCreator.py                   # Creates JSONL cache of embeddings
 ├── GemmaChatbot.py                         # Main chatbot loop
-MASChatbot/my_index_of_Wahltag Kausalanalyse
+MASChatbot/<INDEX_NAME>
 ├── index.faiss                             # FAISS index. Currently only of 1 PDF. Will add more later
 ├── index.pkl                               # LangChain docstore
 ├── vector_cache_for_relevance_....jsonl    # Custom embedding cache

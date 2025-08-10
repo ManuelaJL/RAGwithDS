@@ -9,11 +9,10 @@
 #   ollama run tinyllama
 from langchain.chains.base import Chain
 from langchain_community.llms import Ollama
+from config import EMBEDDING_MODEL, INDEX_NAME
 
 llm = Ollama(model="tinyllama")
 
-# Run Embedder.py to create this index
-indexName = "my_index_of_Wahltag Kausalanalyse"
 
 from langchain.chains import RetrievalQA
 from langchain_community.vectorstores import FAISS
@@ -26,11 +25,11 @@ from typing import cast
 # embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2") #This had trouble with german documents
 
 embedding_model = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    model_name=EMBEDDING_MODEL
 )
 
 vectorstore = cast(FAISS, FAISS.load_local( #cast helps the autocomplete to work
-    indexName,
+    INDEX_NAME,
     embedding_model,
     allow_dangerous_deserialization=True #do not use if you don't trust the source (e.g. you didn't generate the index yourself)
 ))

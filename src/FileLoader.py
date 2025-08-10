@@ -1,7 +1,6 @@
 
-
-
 import os
+from config import FOLDER_PATH
 
 def getContentsOfSinglePDFFile(path: str):
     from langchain_community.document_loaders import PyMuPDFLoader
@@ -36,8 +35,7 @@ def load_pdfs_from_folder(path: str): #This will make one document per page
 
 if __name__ == "__main__":
     print("starting FileLoader")
-    path = r'C:\Data Science\MAS Data Science\2019FS Datenanalyse\Wahltag Kausalanalyse' #\kausalanalyse.pdf
-    docs = load_pdfs_from_folder(path)
+    docs = load_pdfs_from_folder(FOLDER_PATH)
 
     for doc in docs:
         print(f"====================={doc.metadata['filename']} Page {doc.metadata['page']}=============================")

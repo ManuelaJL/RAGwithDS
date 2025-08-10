@@ -4,18 +4,17 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from typing import cast
 from tqdm import tqdm
 import json
+from config import EMBEDDING_MODEL, INDEX_NAME
 
 # Part of the chain that was done in Embedder.py
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
-indexName = "my_index_of_Wahltag Kausalanalyse"
 
-embedModelString = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-embedding_model = HuggingFaceEmbeddings( #Pitfall! Use same model here!
-    model_name=embedModelString
+embedding_model = HuggingFaceEmbeddings(
+    model_name=EMBEDDING_MODEL
 )
 
 vectorstore = cast(FAISS, FAISS.load_local( #cast helps the autocomplete to work
-    indexName,
+    INDEX_NAME,
     embedding_model,
     allow_dangerous_deserialization=True #do not use if you don't trust the source (e.g. you didn't generate the index yourself)
 ))
@@ -33,7 +32,7 @@ def create_chunk_id(doc):
 
 
 if __name__ == "__main__":
-    with open(indexName + "/vector_cache_for_relevance_using_" + embedModelString.replace("/", "_") + ".jsonl", "w") as f:
+    with open(INDEX_NAME + "/vector_cache_for_relevance_using_" + EMBEDDING_MODEL.replace("/", "_") + ".jsonl", "w") as f:
         print("Creating vector cache")
         for doc in tqdm(documents):  #tqdm adds a progress bar
             embedding = embedding_model.embed_documents([doc.page_content])[0]

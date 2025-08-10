@@ -17,6 +17,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from typing import cast
+from config import EMBEDDING_MODEL, INDEX_NAME
 
 def find_search_term(keyword: str, vectorstore, k=50):
     hits = vectorstore.similarity_search(keyword, k=k)
@@ -65,17 +66,16 @@ debug = True
 
 # Part of the chain that was done in Embedder.py
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
-indexName = "my_index_of_Wahltag Kausalanalyse"
-embedModelString = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # "sentence-transformers/all-MiniLM-L6-v2" had trouble with german documents
+
 
 embedding_model = HuggingFaceEmbeddings( #Pitfall! Use same model here!
-    model_name=embedModelString
+    model_name=EMBEDDING_MODEL
 )
 
 
 
 vectorstore = cast(FAISS, FAISS.load_local( #cast helps the autocomplete to work
-    indexName,
+    INDEX_NAME,
     embedding_model,
     allow_dangerous_deserialization=True #do not use if you don't trust the source (e.g. you didn't generate the index yourself)
 ))
@@ -120,7 +120,7 @@ qa_chain_without_retriever = prompt | llm
 # This is for checking if the found documents are relevant
 import json
 import os
-vector_cache_name = indexName + "/vector_cache_for_relevance_using_" + embedModelString.replace("/", "_") + ".jsonl"
+vector_cache_name = INDEX_NAME + "/vector_cache_for_relevance_using_" + EMBEDDING_MODEL.replace("/", "_") + ".jsonl"
 vector_cache = {}
 if os.path.exists(vector_cache_name):
     with open(vector_cache_name, "r") as f:
