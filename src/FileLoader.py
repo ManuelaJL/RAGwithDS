@@ -17,14 +17,19 @@ def load_pdfs_from_folder(path: str): #This will make one document per page
     path = os.path.normpath(path)  # makes sure slashes are treated correctly
 
     for filename in os.listdir(path):
-        if(filename.lower().endswith(".pdf")):
+        full_path = os.path.join(path, filename)
+        if os.path.isdir(full_path):
+            print(f"Entering folder {full_path}")
+            foldercontents = load_pdfs_from_folder(full_path)
+            all_docs.extend(foldercontents)
+        elif filename.lower().endswith(".pdf"):
             full_path = os.path.join(path, filename)
             docs = getContentsOfSinglePDFFile(full_path)
 
             if docs:  # avoid crashing if file failed to load
                 for page_number, doc in enumerate(docs, start=1):
                     doc.metadata["filename"] = filename
-                    doc.metadata["page_number"] = page_number  # 🔢 Add page number metadata
+                    doc.metadata["page_number"] = page_number
 
                 all_docs.extend(docs)
 

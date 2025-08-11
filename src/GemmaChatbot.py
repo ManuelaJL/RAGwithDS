@@ -61,8 +61,6 @@ def removeNonPrintableCharacters(text): #Not used at the moment
 
 
 debug = True
-# Next steps:
-# 4. Include more documents
 
 # Part of the chain that was done in Embedder.py
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
