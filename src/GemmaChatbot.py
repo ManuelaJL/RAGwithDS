@@ -59,6 +59,72 @@ def compute_score(doc_embedding, query_embedding):
 def removeNonPrintableCharacters(text): #Not used at the moment
     return ''.join(c for c in text if c.isprintable() or c in '\n\r')
 
+def is_hallucinated_by_words(answer: str, context: str, threshold: float = 0.5) -> bool:
+    answer_lower = answer.lower()
+    context_lower = context.lower()
+    wordsInAnswerWOStopWords = [word for word in answer_lower.split() if word not in stop_words]
+    matched_words = [word for word in wordsInAnswerWOStopWords if word in context_lower]
+    ratio = len(matched_words) / max(len(wordsInAnswerWOStopWords), 1)
+    output_string = ""
+    for word in answer_lower.split():
+        if word in matched_words:
+            output_string += word
+        else:
+            output_string += '_' * len(word)
+        index = len(output_string)
+        while index < len(answer) and not answer[index].isalpha() :
+            output_string += answer[len(output_string)] #Adds whatever character(s) is at that position of the answer, e.g. space or line break
+            index += 1
+    print(f"\nMatched (non-hallucinated) words:\n{output_string}. (Ratio: {ratio})")
+    return ratio < threshold
+
+import re
+def extract_ngrams(text: str, n: int=2):
+    words = re.findall(r'\w+', text.lower())
+    return [" ".join(words[i:i+n]) for i in range(len(words)-n+1)]
+
+from nltk.corpus import stopwords
+import nltk
+
+nltk.download('punkt')
+nltk.download('stopwords')
+stop_words = set(stopwords.words('english')) | set(stopwords.words('german'))
+
+
+def is_hallucinated_by_phrases(answer: str, context: str, threshold: float = 0.5, ngramsize: int = 2, removeStopwords: bool = True) -> bool:
+    answer_lower = answer.lower()
+    context_lower = context.lower()
+    ngsize_display = ngramsize if ngramsize is not None else 2
+    ngrams = extract_ngrams(answer_lower, ngramsize)
+    # print(f"ngrams:[{':'.join(ngrams)}]")
+    ngrams_without_stopwords = []
+    for ng in ngrams:
+        if all(word.lower() not in stop_words for word in ng.split()) and ngramContainsNoSymbols(ng):
+            ngrams_without_stopwords.append(ng)
+    ngrams_to_use = []
+    if removeStopwords:
+        ngrams_to_use = ngrams_without_stopwords
+    else:
+        ngrams_to_use = ngrams
+
+    # print(f"ngrams without stop words:[{':'.join(ngrams_to_use)}]")
+    matched = [ng for ng in ngrams_to_use if ng in context_lower]
+    ratio = len(matched) / max(len(ngrams_to_use), 1)
+
+    print(f"\nMatched (non-hallucinated) {ngsize_display}-grams:\n{', '.join(matched)} (Ratio: {ratio})")
+    return ratio < threshold
+
+
+def ngramContainsNoSymbols(ng):
+    if not ng.strip():
+        return True
+    if not ng[0].isalpha():
+        return False
+    words = ng.split()
+    if len(words) < 2:
+        return True
+    return words[1].isalpha()
+
 
 debug = True
 
@@ -82,8 +148,9 @@ vectorstore = cast(FAISS, FAISS.load_local( #cast helps the autocomplete to work
 from langchain.prompts import PromptTemplate
 
 template = """
-You must begin by repeating the exact question word for word.
-Then answer the question, using the context below. Do not add anything unrelated.
+You must begin by repeating the exact question word for word: '{question}'.
+Do not add meta-comments like 'Here's the answer'.
+Then answer the question, using only the context below. Do not add any of your own knowledge.
 Avoid vague or general statements — draw from concrete details in the context. If the context does not contain an answer, say so clearly.
 
 Question:
@@ -182,6 +249,13 @@ while True:
         else:
             print("🔍 Answer:")
             print(result)
+            if debug and is_hallucinated_by_words(result, context_text):
+                print("Warning! High chance there are hallucinations in this text (based on words)!\n")
+            if debug and is_hallucinated_by_phrases(result, context_text, 0.2):
+                print("Warning! High chance there are hallucinations in this text (based on 2-word phrases)!\n")
+            if debug and is_hallucinated_by_phrases(result, context_text, 0.0, 4, False):
+                print("Warning! High chance there are hallucinations in this text (based on 4-word phrases)!")
+
 
             print("\n📚 Source pages:")
             for doc in filtered_docs:
@@ -189,3 +263,7 @@ while True:
                 print(f"Page {doc.metadata['page']} of {clean_path}")
                 print("\n\t" + doc.page_content.replace("\n", "\n\t") + "\n")
         print("\n\n")
+
+
+# Example question: what is a cloud
+# C:\Data Science\MAS Data Science\2020FS Big Data\03 HW Architektur Cloud\02_CAS_Big_Data_Infrastructure_Design_FHBE_2020.pdf_4 :
