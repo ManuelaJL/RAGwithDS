@@ -1,20 +1,10 @@
 
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
-from typing import cast
-from config import EMBEDDING_MODEL, INDEX_NAME, FOLDER_PATH
 
-embedding_model = HuggingFaceEmbeddings(
-    model_name=EMBEDDING_MODEL
-)
+from config import INDEX_NAME, FOLDER_PATH
 
-vectorstore = cast(FAISS, FAISS.load_local( #cast helps the autocomplete to work
-    INDEX_NAME,
-    embedding_model,
-    allow_dangerous_deserialization=True #do not use if you don't trust the source (e.g. you didn't generate the index yourself)
-))
+from Embedder import getAllDocsFromIndex
 
-documents = vectorstore.similarity_search("placeholder query, just get everything", k=vectorstore.index.ntotal)
+documents = getAllDocsFromIndex()
 
 set_of_sources = set()
 

@@ -1,10 +1,9 @@
 
-from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-from typing import cast
 from tqdm import tqdm
 import json
 from config import EMBEDDING_MODEL, INDEX_NAME
+from Embedder import getAllDocsFromIndex
 
 # Part of the chain that was done in Embedder.py
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
@@ -13,13 +12,7 @@ embedding_model = HuggingFaceEmbeddings(
     model_name=EMBEDDING_MODEL
 )
 
-vectorstore = cast(FAISS, FAISS.load_local( #cast helps the autocomplete to work
-    INDEX_NAME,
-    embedding_model,
-    allow_dangerous_deserialization=True #do not use if you don't trust the source (e.g. you didn't generate the index yourself)
-))
-
-documents = vectorstore.similarity_search("placeholder query, just get everything", k=vectorstore.index.ntotal)
+documents = getAllDocsFromIndex()
 
 
 import hashlib
