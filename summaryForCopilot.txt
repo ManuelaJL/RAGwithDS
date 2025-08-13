@@ -5,6 +5,7 @@ I've successfully created:
 - Now I'm trying to get an Ollama chatbot to access this index. But mistral kept showing exit code -1073740791, so we switched to tinyllama (with set OLLAMA_NUM_GPU_LAYERS=0) and tinyllama usually answers one question and then crashes again, with the message ValueError: Ollama call failed with status code 500. Details: {"error":"llama runner process has terminated: GGML_ASSERT(ctx-\u003emem_buffer != NULL) failed"}
 I use python 3.8.2, pip, intelliJ, my venv is called .ragvenv.
 So far, I installed via pip: langchain, langchain-community, unstructured, pip install "unstructured[pdf]", pymupdf, sentence-transformers, faiss-cpu,
+dir-tree
 A lot of the documents I want to use as input are in German, though I might use English ones too.
 I'm using ollama (which I have recently downloaded, July 2025, so I assume it's upto date), and tinyllama
 I tried it with TinyLlama. But it kept hallucinating answers, not finding the right page. Even if I specifically ask a question that is answered verbatim on one of the pages.
