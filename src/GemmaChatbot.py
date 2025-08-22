@@ -8,7 +8,8 @@
 #   ollama run gemma
 # I got: Error: llama runner process has terminated: cudaMalloc failed: out of memory
 # So, created C:\Users\manue\.ollama\config to force it to use cpu. But still same error.
-# Tried instead: Ollama pull gemma:2b, and that worked
+# Tried instead: Ollama pull gemma:2b, then ollama run gemma:2b and that worked
+# ollama run gemma:2b --cpu-only
 
 from langchain_community.llms import Ollama
 

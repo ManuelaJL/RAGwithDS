@@ -29,6 +29,8 @@ MASChatbot/<INDEX_NAME>
 ├── index.faiss                             # FAISS index. Currently only of 1 PDF. Will add more later
 ├── index.pkl                               # LangChain docstore
 ├── vector_cache_for_relevance_....jsonl    # Custom embedding cache
+MASChatbot/summary
+├── Summarizer.py                           # Goes through all documents of a given path, and summarizes them
 
 Cycle:
 1. Embedder uses FileLoader to get the contents of the PDF (currenlty only 1. Will add more later)
@@ -43,6 +45,12 @@ Instead of using qa_chain to get the results directly, we first get the relevant
 then check via meets_relevance_criteria if each page is close enough to the query (that's where we need the vector_cache).
 It merges the relevant pages into a context string, and uses it to call qa_chain_without_retriever.invoke and prints the result.
 
+EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+Summarizer:
+Goes through all the documents of a given path, and first makes summaries of each page individually, and then combines them into summaries
+of the whole document (and a version that directly summarizes the whole document).
+It then saves these summaries in text form, in the summary/output folder, in the same folder structure they were originally in.
 
 Todo:
     - if index is created anew, delete vector storage that goes with it.
