@@ -1,23 +1,12 @@
-# https://ollama.com/download
-# Installation automatically extracted files to: C:\Users\manue\AppData\Local\Programs\Ollama\
-# To download the model: ollama pull gemma:latest
-# Run it on GPU: ollama run gemma
-# To make it run on cpu instead: (and use powershell as administrator) type into terminal:
-#   set OLLAMA_NUM_GPU_LAYERS=0
-#   set CUDA_VISIBLE_DEVICES=
-#   ollama run gemma
-# I got: Error: llama runner process has terminated: cudaMalloc failed: out of memory
-# So, created C:\Users\manue\.ollama\config to force it to use cpu. But still same error.
-# Tried instead: Ollama pull gemma:2b, then ollama run gemma:2b and that worked
-# ollama run gemma:2b --cpu-only
 
-from langchain_community.llms import Ollama
 
 
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from typing import cast
+
+from OllamaLLMInterface import OllamaLLMInterface
 from config import EMBEDDING_MODEL, INDEX_NAME
 
 def find_search_term(keyword: str, vectorstore, k=50):
@@ -133,7 +122,13 @@ debug = True
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
 
 
-embedding_model = HuggingFaceEmbeddings( #Pitfall! Use same model here!
+myLLM = OllamaLLMInterface()
+
+if not myLLM.isAvailable():
+    print("Sorry, the LLM is not available!")
+    exit(1)
+
+embedding_model = HuggingFaceEmbeddings(
     model_name=EMBEDDING_MODEL
 )
 
@@ -146,9 +141,7 @@ vectorstore = cast(FAISS, FAISS.load_local( #cast helps the autocomplete to work
 ))
 
 
-from langchain.prompts import PromptTemplate
-
-template = """
+prompt_template = """
 You must begin by repeating the exact question word for word: '{question}'.
 Do not add meta-comments like 'Here's the answer'.
 Then answer the question, using only the context below. Do not add any of your own knowledge.
@@ -164,24 +157,11 @@ Answer:
 """
 
 
-prompt = PromptTemplate.from_template(template)
-
-llm = Ollama(model="gemma:2b") #LangChain LLM wrapper
-
 retriever = vectorstore.as_retriever()      #gets the context
 # retriever.search_kwargs["k"] = 1
 retriever.search_type = "similarity" #mmr
 
 
-
-# qa_chain = cast(Chain, RetrievalQA.from_chain_type( #We no longer use this because we want to add a step inbetween retrieving and generating the answer
-#     llm=llm,
-#     retriever=retriever,
-#     return_source_documents=True,
-#     chain_type_kwargs={"prompt": prompt}
-# ))
-
-qa_chain_without_retriever = prompt | llm
 
 # This is for checking if the found documents are relevant
 import json
@@ -239,10 +219,8 @@ while True:
 
         result = None
         try:
-            result = qa_chain_without_retriever.invoke({
-                "question": user_query,
-                "context":  context_text
-            })
+            myLLM.setPrompt(prompt_template)
+            result = myLLM.respond(query=user_query, context_text=context_text)
         except Exception as e:
             print(f"Got an exception: {e}")
         if not result:
