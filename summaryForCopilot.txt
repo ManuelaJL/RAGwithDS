@@ -24,7 +24,7 @@ MASChatbot/src
 ├── FileLoader.py                           # Loads PDFs from folder
 ├── Embedder.py                             # Embeds documents and creates FAISS index
 ├── VectorCacheCreator.py                   # Creates JSONL cache of embeddings
-├── GemmaChatbot.py                         # Main chatbot loop
+├── Chatbot.py                              # Main chatbot loop
 MASChatbot/<INDEX_NAME>
 ├── index.faiss                             # FAISS index. Currently only of 1 PDF. Will add more later
 ├── index.pkl                               # LangChain docstore
