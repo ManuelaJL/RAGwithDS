@@ -61,3 +61,14 @@ Going to the cloud
 The Gemma:2B LLM answers the questions just barely ok, but I need something better. So I'm trying cloud solutions.
 
 I use https://openrouter.ai/ and the model "openai/gpt-oss-20b:free". It works a lot better.
+
+Azure
+Since I wanted to practice my azure skills, I went to portal.azure.com and started with an azure free trial.
+(Memo: do not use all these credits on OpenAI. Another feature I want to test that requires credits is Azure Databricks)
+Click "Create a resource", type "Azure OpenAI" into the search field. Pick the result that matches that name.
+My resource group: mas-rag-explore
+Region: West Europe
+Name: mas-rag-openai
+Now you can access it here: https://oai.azure.com/
+After clicking on the resource, press model catalog and pick one. I'll use gpt-35-turbo, and call the deployment gpt35-deployment.
+Warning about the model: This deployment is using legacy model gpt-35-turbo version 0125 which will be retired on 11/11/2025 local time.
