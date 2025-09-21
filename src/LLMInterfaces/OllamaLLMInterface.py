@@ -1,4 +1,4 @@
-from LLMSuperclass import LLMSuperclass
+from LLMInterfaces.LLMSuperclass import LLMSuperclass
 from langchain_community.llms import Ollama
 from langchain.prompts import PromptTemplate
 import requests
@@ -15,7 +15,16 @@ class OllamaLLMInterface(LLMSuperclass):
             return False
 
     def respond(self, query: str, context_text: str) -> str:
-        prompt = PromptTemplate.from_template(self.promptStr)
+        prompt = PromptTemplate.from_template(self.promptStr +
+                                              """
+                                              
+                                Question:
+                                {question}
+                                
+                                Context:
+                                {context}
+                                              """
+                                              )
         llm = Ollama(model="gemma:2b")
         qa_chain_without_retriever = prompt | llm
 

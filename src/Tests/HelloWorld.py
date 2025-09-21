@@ -14,8 +14,8 @@ import time
 
 import os
 print("Basepath: ", ".")
-for filename in os.listdir("."):
-    full_path = os.path.join(".", filename)
+for filename in os.listdir(".."):
+    full_path = os.path.join("..", filename)
     if os.path.isdir(full_path):
         print("  └─", filename)
     else:

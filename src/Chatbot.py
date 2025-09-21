@@ -6,7 +6,9 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 from typing import cast
 
-from OllamaLLMInterface import OllamaLLMInterface
+from LLMInterfaces.OpenRouterLLMInterface import OpenRouterLLMInterface
+from LLMInterfaces.TinyOllamaLLMInterface import TinyOllamaLLMInterface
+from LLMInterfaces.OpenaiLLMInterface import OpenaiLLMInterface
 from config import EMBEDDING_MODEL, INDEX_NAME
 
 def find_search_term(keyword: str, vectorstore, k=50):
@@ -35,7 +37,7 @@ def meets_relevance_criteria(doc, query, vector_cache, min_relevance=0.75):
     doc_embedding = doc_embedding_entry['embedding']
     chunk_score = compute_score(doc_embedding, query_embedding)
     if debug:
-        print(f"Score of {doc.metadata['file_path']}_{doc.metadata.get('page')} : {chunk_score}")
+        print(f"Score of {doc.metadata['file_path']} {doc.metadata.get('page')} : {chunk_score}")
     doc.metadata['score'] = chunk_score
     return chunk_score >= min_relevance
 
@@ -121,8 +123,9 @@ debug = True
 # Part of the chain that was done in Embedder.py
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
 
-
-myLLM = OllamaLLMInterface()
+# myLLM = TinyOllamaLLMInterface()
+# myLLM = OllamaLLMInterface()
+myLLM = OpenaiLLMInterface()
 
 if not myLLM.isAvailable():
     print("Sorry, the LLM is not available!")
@@ -142,18 +145,9 @@ vectorstore = cast(FAISS, FAISS.load_local( #cast helps the autocomplete to work
 
 
 prompt_template = """
-You must begin by repeating the exact question word for word: '{question}'.
 Do not add meta-comments like 'Here's the answer'.
-Then answer the question, using only the context below. Do not add any of your own knowledge.
+Answer the question, using only the context below. Do not add any of your own knowledge.
 Avoid vague or general statements — draw from concrete details in the context. If the context does not contain an answer, say so clearly.
-
-Question:
-{question}
-
-Context:
-{context}
-
-Answer:
 """
 
 
