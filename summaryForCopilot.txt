@@ -62,7 +62,8 @@ The Gemma:2B LLM answers the questions just barely ok, but I need something bett
 
 I use https://openrouter.ai/ and the model "openai/gpt-oss-20b:free". It works a lot better.
 
-Azure
+==Azure==
+
 Since I wanted to practice my azure skills, I went to portal.azure.com and started with an azure free trial.
 (Memo: do not use all these credits on OpenAI. Another feature I want to test that requires credits is Azure Databricks)
 Click "Create a resource", type "Azure OpenAI" into the search field. Pick the result that matches that name.
@@ -72,3 +73,14 @@ Name: mas-rag-openai
 Now you can access it here: https://oai.azure.com/
 After clicking on the resource, press model catalog and pick one. I'll use gpt-35-turbo, and call the deployment gpt35-deployment.
 Warning about the model: This deployment is using legacy model gpt-35-turbo version 0125 which will be retired on 11/11/2025 local time.
+
+Blob storage:
+Created this part on the azure website:
+    Storage account name: rawfilesstorageaccount
+    Region: West europe
+    Preferred storage type: Azure Blob Storage
+In order to upload a whole folder, I installed Azure Storage Explorer.
+On azure, I went to the page of the rawfilestorageaccount -> Security + Networking -> Access Keys -> copied the connection string from key 1
+and in the Storage explorer, signed in using that.
+In the Azure Storage Explorer, Right-click on emulator & attached -> storage accounts -> rawfilesstorageaccount1 -> Blob containers
+and create container named rawfilescontainer. Then I uploaded my folder structure there.
