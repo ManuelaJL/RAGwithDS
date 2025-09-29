@@ -8,7 +8,7 @@ from typing import cast
 
 from LLMInterfaces.OpenRouterLLMInterface import OpenRouterLLMInterface
 from LLMInterfaces.TinyOllamaLLMInterface import TinyOllamaLLMInterface
-from LLMInterfaces.OpenaiLLMInterface import OpenaiLLMInterface
+from LLMInterfaces.AzureOpenaiLLMInterface import AzureOpenaiLLMInterface
 from config import EMBEDDING_MODEL, INDEX_NAME
 
 def find_search_term(keyword: str, vectorstore, k=50):
@@ -125,7 +125,7 @@ debug = True
 
 # myLLM = TinyOllamaLLMInterface()
 # myLLM = OllamaLLMInterface()
-myLLM = OpenaiLLMInterface()
+myLLM = AzureOpenaiLLMInterface()
 
 if not myLLM.isAvailable():
     print("Sorry, the LLM is not available!")

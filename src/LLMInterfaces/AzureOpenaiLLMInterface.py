@@ -2,7 +2,7 @@ from LLMInterfaces.LLMSuperclass import LLMSuperclass
 from config import OPENAI_GPT35_API_KEY
 from openai import AzureOpenAI
 
-class OpenaiLLMInterface(LLMSuperclass):
+class AzureOpenaiLLMInterface(LLMSuperclass):
     endpoint = "https://manue-mftmnpg0-eastus2.cognitiveservices.azure.com/"
     model_name = "gpt-35-turbo"
     deployment = "gpt35-deployment"
