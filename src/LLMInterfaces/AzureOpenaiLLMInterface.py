@@ -13,6 +13,8 @@ class AzureOpenaiLLMInterface(LLMSuperclass):
         # which costs money. So just leave it.
         return True
 
+    def getName(self):
+        return f"Azure OpenAI with {self.model_name}"
 
     def respond(self, query: str, context_text: str) -> str:
         client = AzureOpenAI(

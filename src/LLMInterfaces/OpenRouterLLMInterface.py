@@ -30,6 +30,9 @@ class OpenRouterLLMInterface(LLMSuperclass):
             return False
 
 
+    def getName(self):
+        return f"Openrouter with {self.model}"
+
     def respond(self, query: str, context_text: str) -> str:
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
@@ -56,6 +59,9 @@ class OpenRouterLLMInterface(LLMSuperclass):
                 }
             ]
         )
+        if not completion or not completion.choices or not completion.choices[0].message:
+            raise ValueError("No valid response received from OpenRouter.")
+
         raw_response = completion.choices[0].message.content
         if 'assistantfinal' in raw_response:    #Response contains analysis and reasoning, which we wanna skip
             return raw_response.split('assistantfinal', 1)[1].strip()

@@ -4,6 +4,9 @@ class LLMSuperclass(ABC):     #Inherit from Abstract Base Class
     def __init__(self):
         pass
 
+    def getName(self):
+        return "Unspecified LLM"
+
     def setPrompt(self, promptStr: str):
         self.promptStr = promptStr
 

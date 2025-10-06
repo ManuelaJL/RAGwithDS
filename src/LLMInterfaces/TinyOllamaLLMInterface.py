@@ -14,6 +14,8 @@ class TinyOllamaLLMInterface(LLMSuperclass):
         except requests.exceptions.ConnectionError:
             return False
 
+    def getName(self):
+        return "TinyOllama"
     def respond(self, query: str, context_text: str) -> str:
         prompt = PromptTemplate.from_template(self.promptStr +
                                               """

@@ -4,6 +4,7 @@ from langchain.prompts import PromptTemplate
 import requests
 
 class OllamaLLMInterface(LLMSuperclass):
+    model = "gemma:2b"
 
     @staticmethod
     def isAvailable():
@@ -13,6 +14,9 @@ class OllamaLLMInterface(LLMSuperclass):
             return response.status_code == 200
         except requests.exceptions.ConnectionError:
             return False
+
+    def getName(self):
+        return f"Ollama with {self.model}"
 
     def respond(self, query: str, context_text: str) -> str:
         prompt = PromptTemplate.from_template(self.promptStr +
@@ -25,7 +29,7 @@ class OllamaLLMInterface(LLMSuperclass):
                                 {context}
                                               """
                                               )
-        llm = Ollama(model="gemma:2b")
+        llm = Ollama(model=self.model)
         qa_chain_without_retriever = prompt | llm
 
         return qa_chain_without_retriever.invoke({
