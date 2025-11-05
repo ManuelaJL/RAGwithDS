@@ -1,10 +1,10 @@
 from LLMInterfaces.LLMSuperclass import LLMSuperclass
-from config import OPENAI_GPT35_API_KEY
+from configSecret import OPENAI_GPT35_API_KEY, AZURE_SEARCH_SERVICE_ENDPOINT, GPT_ENGINE
 from openai import AzureOpenAI
 
 class AzureOpenaiLLMInterface(LLMSuperclass):
-    endpoint = "https://manue-mftmnpg0-eastus2.cognitiveservices.azure.com/"
-    model_name = "gpt-35-turbo"
+    endpoint = AZURE_SEARCH_SERVICE_ENDPOINT #"https://manue-mftmnpg0-eastus2.cognitiveservices.azure.com/"
+    model_name = GPT_ENGINE #"gpt-35-turbo"
     deployment = "gpt35-deployment"
 
     @staticmethod

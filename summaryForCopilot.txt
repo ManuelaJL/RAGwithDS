@@ -38,14 +38,14 @@ MASChatbot/summary
 ├── Summarizer.py                           # Goes through all documents of a given path, and summarizes them
 
 Cycle:
-1. Embedder uses FileLoader to get the contents of the PDF (currenlty only 1. Will add more later)
+1. Embedder uses FileLoader to get the contents of the PDF
 It creates an index, i.e. a FAISS vectorstore, which is stored in the file index.faiss
 2. VectorCacheCreator creates a cache of each chunk's embedding, saved in vector_cache_for_relevance...jsonl
 This is because the chunks' embedding isn't accessible to us. It's blackbox. But we would like to have the
 embedding so we can compare how relevant the found results are.
 ChunkIds are deterministic, using the filename and page number.
-3. (Failed at this step with TinyOllamaChatbot, so instead using: ) GemmaChatbot loads the index/vectorstore
-and the vector cache, then chats with the user in an endless loop.
+3. Chatbot.py loads the index/vectorstore and the vector cache, then chats with the user in an endless loop.
+(What LLM it uses can be configured. TinyOllamaChatbot failed, GemmaChatbot worked)
 Instead of using qa_chain to get the results directly, we first get the relevant documents via the retriever,
 then check via meets_relevance_criteria if each page is close enough to the query (that's where we need the vector_cache).
 It merges the relevant pages into a context string, and uses it to call qa_chain_without_retriever.invoke and prints the result.
@@ -66,13 +66,40 @@ I use https://openrouter.ai/ and the model "openai/gpt-oss-20b:free". It works a
 
 Since I wanted to practice my azure skills, I went to portal.azure.com and started with an azure free trial.
 (Memo: do not use all these credits on OpenAI. Another feature I want to test that requires credits is Azure Databricks)
-Click "Create a resource", type "Azure OpenAI" into the search field. Pick the result that matches that name.
-My resource group: mas-rag-explore
-Region: West Europe
-Name: mas-rag-openai
-Now you can access it here: https://oai.azure.com/
-After clicking on the resource, press model catalog and pick one. I'll use gpt-35-turbo, and call the deployment gpt35-deployment.
-Warning about the model: This deployment is using legacy model gpt-35-turbo version 0125 which will be retired on 11/11/2025 local time.
+
+To create a new resource, just type the resource type into the search bar and click the result.
+
+Graphical setup: (with the user-defined names I currently have in quotes)
+
+Azure OpenAI "mas-rag-openai-eastus"
+	has deployments                                                                             <-- needs quota, and the right region
+		Model "gpt-35-turbo"
+		Model "text-embedding-ada-002"
+		|
+		|
+		V
+		open this in Azure AI Foundry, i.e. under ai.azure.com / oai.azure.com,
+		on the left, click "chat".
+		Then "add your data" and select "Azure AI Search" as a data source. Select....
+		|
+		|
+		V
+Azure AI Search "mas-aisearchdemo" (must be in same region as the Azure OpenAI)                 <-- hourly cost! Turn off after use
+Indexes and stores document chunks
+		|
+		|
+		V
+		has Data Resource with index "indpref2" (made via Import data (new))
+		which is created from
+		|
+		|
+		V
+Storage account "rawfilesstorageaccount" (doesn't need to be in same region as the above)
+Contains the documents I uploaded
+	has a
+		Data Container "rawfilescontainer"
+
+
 
 Blob storage:
 Created this part on the azure website:
@@ -84,3 +111,85 @@ On azure, I went to the page of the rawfilestorageaccount -> Security + Networki
 and in the Storage explorer, signed in using that.
 In the Azure Storage Explorer, Right-click on emulator & attached -> storage accounts -> rawfilesstorageaccount1 -> Blob containers
 and create container named rawfilescontainer. Then I uploaded my folder structure there.
+
+
+Models
+You need:
+    - an LLM, e.g. gpt-35-turbo, so it chats with you ( Warning about the model: This deployment is using legacy model gpt-35-turbo version 0125 which will be retired on 11/11/2025 local time.)
+    - an embedding, e.g. text-embedding-ada-002, so your text prompts can be translated into the same vector space as the index
+    - optionally e.g. an Image Model to read images, like dall-e-3
+These models are attached to the Azure OpenAI. Open the OpenAI in the Azure AI Foundry, (button: "Go to Azure OpenAI Studio") i.e. under ai.azure.com.
+On the left, click Deployments -> + Deploy Model -> Base Model -> gpt-35-turbo
+
+    Pitfalls:
+    - If the region of the OpenAI doesn't support a certain model, e.g. West Europe does not support gpt-35-turbo, trying to deploy a model might
+    just deploy it under a different resource. For example, for me it automatically deployed them under an AI Foundry named manue-mftmnpg0-eastus that I still had.
+    But this resource is not compatible for a RAG. When clicking "Import (new)" (formerly: "Import and vectorize data"), models in the AI Foundry don't count.
+    - You need to request quota in order to deploy models. You can see how much quota you have by opening the Azure OpenAI in the Azure AI Foundry,
+      and on the left, clicking "quota".
+      To get more quota:
+
+          Upgrade to Pay-as-you-go subscription:
+          I get a notification every day saying how much credit remains. I clicked on the link there.
+
+          To request more quota:
+          https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR4xPXO648sJKt4GoXAed-0pUQ09DV1Q4MzdOVVVZMEY4RElWTUpKN1pMMCQlQCN0PWcu
+          Account resource ID found: (go to the resource) -> Settings on the left -> Properties
+          But this only works if you have a paid subscription!
+
+          I received emails saying my quest was denied twice, and then sometime later, I suddenly had quota. Apparently they sometimes silently approve it if capacity is opened.
+
+    An alternative I tried was to set up the models on OpenAI (i.e. not on the Azure portal, but the free one):
+    https://platform.openai.com/docs/overview
+    But turns out you need to pay there too, so I dropped it.
+
+
+AI Search:
+https://portal.azure.com/ → Create a resource → Search → Azure AI Search
+    service name: mas-aisearchdemo
+    Location: Must be the same region as the Azure OpenAI resource!
+Beware! This incurs an hourly cost of e.g. 0.15$. For this reason, I often switched them off again after testing them.
+Names of search services I closed for this reason: mas-rag-aisearch, mas-rag-aisearch-eastus
+
+
+
+Data Resource
+Navigate to the above Azure AI Search -> "Import Data (new)" above (formerly: "Import and vectorize data")
+    Data source type: Azure Blob storage
+    I chose "RAG" instead of "Multimodal RAG" for now
+    name: indpref2-datasource (outdated: mas-rag-datasource)
+    Container name: (use same as container above) rawfilescontainer
+    Parsing mode: Text
+    Azure OpenAI service: mas-aisearchdemo (You'll get a warning if this doesn't have an embedding yet)
+    Model deployment: pick the embedding, e.g. text-embedding-ada-002
+    The fields it creates:
+        chunk_id (autogenerated)
+        parent_id: filename or path of original document
+        chunk : the content
+        content: vector
+        title : original file name
+    Index Scheduling: once
+    Based on your configuration, the wizard will create an index, an indexer, a data source, and a skillset on your search service.
+    Prefix: indpref2 (this also becomes the name of your index)
+    Extracting text from images: Disabled
+    Semantic ranker: Enabled
+    How to access it later:
+    https://portal.azure.com/#home -> Name of Search service ->
+    on the left: Search management -> indexes -> mas-rag-index
+
+The result is that .ipynb files are gibberish.
+I need to save them as text locally and reupload them, for them to work.
+
+The "Parent_id" is encrypted. Decrypt it by installing the notepad++ plugin MIME Tools
+
+
+To shut down services when too much cost is raked up, I created an
+Automation account named chluetterSaveAutomation
+with a runbook named StopExpensiveResources
+(The windows script was created by copilot. It turns off all the resources)
+Action group named ManusActionGroup, display name MActionGroup
+
+
+
+    to check
+    https://learn.microsoft.com/en-us/azure/search/tutorial-rag-build-solution
