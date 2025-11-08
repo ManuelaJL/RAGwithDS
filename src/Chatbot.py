@@ -9,6 +9,7 @@ from typing import cast
 from LLMInterfaces.OpenRouterLLMInterface import OpenRouterLLMInterface
 from LLMInterfaces.TinyOllamaLLMInterface import TinyOllamaLLMInterface
 from LLMInterfaces.AzureOpenaiLLMInterface import AzureOpenaiLLMInterface
+from LLMInterfaces.OllamaLLMInterface import OllamaLLMInterface
 from config import EMBEDDING_MODEL, INDEX_NAME
 
 def find_search_term(keyword: str, vectorstore, k=50):
@@ -124,8 +125,8 @@ debug = True
 # parent document --> chunks --> vectorized into vectorstore (the index.faiss created in the other file is the vectorstore)
 
 # myLLM = TinyOllamaLLMInterface()
-# myLLM = OllamaLLMInterface()
-myLLM = AzureOpenaiLLMInterface()
+myLLM = OllamaLLMInterface()
+# myLLM = AzureOpenaiLLMInterface()
 
 if not myLLM.isAvailable():
     print("Sorry, the LLM is not available!")
