@@ -1,4 +1,6 @@
-I want to create a RAG that runs on my local computer. As input, it will use the contents of my Data Science MAS folder.
+Purpose of this document: if I need to use copilot to trouble-shoot something, I'll feed it the below information about the structure and building process of the document so it's up to date. To a lesser degree, it helps me remember how I did things in case I need to do it again for another project.
+
+I created a RAG that runs on my local computer. As input, it will use the contents of my Data Science MAS folder.
 I've successfully created:
 - a python file that loads all the pdfs in a given folder (FileLoader.py)
 - a python file that creates a FAISS index out of them (Embedder.py) which stores the resulting folder on my HD. This folder contanis an index.faiss and an index.pkl
@@ -84,7 +86,7 @@ Azure OpenAI "mas-rag-openai-eastus"
 		|
 		|
 		V
-Azure AI Search "mas-aisearchdemo" (must be in same region as the Azure OpenAI)                 <-- hourly cost! Turn off after use
+Azure AI Search "mas-aisearchdemo" (must be in same region as the Azure OpenAI)                 <-- hourly cost! Turn off after use (Must delete, can't be paused)
 Indexes and stores document chunks
 		|
 		|
@@ -149,7 +151,7 @@ https://portal.azure.com/ → Create a resource → Search → Azure AI Search
     service name: mas-aisearchdemo
     Location: Must be the same region as the Azure OpenAI resource!
 Beware! This incurs an hourly cost of e.g. 0.15$. For this reason, I often switched them off again after testing them.
-Names of search services I closed for this reason: mas-rag-aisearch, mas-rag-aisearch-eastus
+Names of search services I closed for this reason: mas-rag-aisearch, mas-rag-aisearch-eastus, mas-aisearchdemo
 
 
 
